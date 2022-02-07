@@ -9,3 +9,47 @@ datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
 }
+
+// defining tables in prisma
+model Post {
+  id          Int      @id @default(autoincrement())
+  title       String
+  content     String
+  published   Boolean  @default(false)
+  createdDate DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  autherId    Int
+  author      User     @relation(fields: [autherId], references: [id])
+}
+
+model User {
+  id          Int      @id @default(autoincrement())
+  email       String   @unique
+  name        String?
+  password    String
+  createdDate DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  posts       Post[]
+  profile     Profile?
+}
+
+// string? -> it could b optional
+
+model Profile {
+  id          Int      @id @default(autoincrement())
+  bio         String
+  createdDate DateTime @default(now())
+  updateAt    DateTime @updatedAt
+  userId      Int      @unique
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+//to create tables in db
+// npx prisma db push
+
+//to veiw database tables
+//npx prisma studio
+
+//defining relations
+// author      User     @relation(fields: [autherId], referances: [id])
+// author is related to user, the related filed fill autherId with users id
