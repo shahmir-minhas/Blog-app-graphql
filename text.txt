@@ -33,6 +33,8 @@ export const Mutation = {
         post: null,
       };
     } else {
+      // console.log(title + " " + content);
+      //   const post = await ;
       return {
         userErrors: [],
         post: prisma.post.create({
@@ -53,21 +55,11 @@ export const Mutation = {
   ) => {
     const { title, content } = post;
     // checks if fields have values
-    if (!title && !content) {
+    if (!title || !content) {
       return {
         userError: [
           {
             message: "Need to have at least one field to update!",
-          },
-        ],
-        post: null,
-      };
-    }
-    if (!title && !content) {
-      return {
-        userErrors: [
-          {
-            message: "Need to have at least on e field to update",
           },
         ],
         post: null,
@@ -79,24 +71,25 @@ export const Mutation = {
         id: Number(postId),
       },
     });
-
     //checks if posts exists
     if (!existingPost) {
       return {
-        userErrors: [
+        userError: [
           {
-            message: "Post does not exist",
+            message: "Post doesn't exist!",
           },
         ],
         post: null,
       };
     }
-
     // creating a payload
+
     let payloadToUpdate = {
       title,
       content,
     };
+    console.log(payloadToUpdate);
+
     return {
       userErrors: [],
       post: prisma.post.update({
@@ -110,7 +103,6 @@ export const Mutation = {
     };
   },
   //================================================================================ Delete
-  postDelete: (_: any, __: any, { prisma }: Context) => {},
 };
 
 // using _ and __ means that
