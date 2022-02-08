@@ -28,7 +28,7 @@ const server = new ApolloServer({
   },
   context: async ({ req }: any): Promise<Context> => {
     //context gets the request
-    console.log(req.headers.authorization);
+    console.log("=========== auth token", req.headers.authorization);
     const userInfo = await getUserFromToken(req.headers.authorization); //get user id
     console.log("User Info", userInfo);
     //return prisma and userId

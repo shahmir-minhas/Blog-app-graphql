@@ -1,5 +1,6 @@
 import { Post, Prisma } from "@prisma/client";
 import { Context } from "../../index";
+import { canUserMutatePost } from "../../Utils/canUserMutatePost";
 
 interface PostArgs {
   post: {
@@ -22,6 +23,8 @@ export const postResolvers = {
     { post }: PostArgs,
     { prisma, userInfo }: Context
   ): Promise<PostPayloadType> => {
+    console.log("========== create post ==============");
+    console.log(userInfo);
     if (!userInfo) {
       return {
         userErrors: [
@@ -59,8 +62,26 @@ export const postResolvers = {
   postUpdate: async (
     _: any,
     { postId, post }: { postId: string; post: PostArgs["post"] },
-    { prisma }: Context
+    { prisma, userInfo }: Context
   ): Promise<PostPayloadType> => {
+    // auth user
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "sign in to create post",
+          },
+        ],
+        post: null,
+      };
+    }
+    // check if user can update this post or not
+    const err = await canUserMutatePost({
+      userId: userInfo.user,
+      postId: Number(postId),
+      prisma,
+    });
+    if (err) return err;
     const { title, content } = post;
     // checks if fields have values
     if (!title && !content) {
@@ -123,13 +144,31 @@ export const postResolvers = {
   postDelete: async (
     _: any,
     { postId }: { postId: string },
-    { prisma }: Context
+    { prisma, userInfo }: Context
   ): Promise<PostPayloadType> => {
+    // auth user
+    if (!userInfo) {
+      return {
+        userErrors: [
+          {
+            message: "sign in to create post",
+          },
+        ],
+        post: null,
+      };
+    }
+    // check if user can update this post or not
+    const err = await canUserMutatePost({
+      userId: userInfo.user,
+      postId: Number(postId),
+      prisma,
+    });
     const post = await prisma.post.findUnique({
       where: {
         id: Number(postId),
       },
     });
+
     if (!post) {
       return {
         userErrors: [

@@ -2,7 +2,7 @@ import JWT from "jsonwebtoken";
 import { JWT__SIGNATIRE } from "../resolvers/Keys";
 
 export const getUserFromToken = (token: string) => {
-  //verfication of token
+  //   verfication of token
   try {
     console.log("i am here");
     return JWT.verify(token, JWT__SIGNATIRE) as {
