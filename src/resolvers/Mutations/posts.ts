@@ -1,5 +1,5 @@
 import { Post, Prisma } from "@prisma/client";
-import { Context } from "../index";
+import { Context } from "../../index";
 
 interface PostArgs {
   post: {
@@ -15,7 +15,7 @@ interface PostPayloadType {
   post: Post | Prisma.Prisma__PostClient<Post> | null;
 }
 
-export const Mutation = {
+export const postResolvers = {
   //================================================================================ Create
   postCreate: async (
     _: any,
@@ -50,12 +50,12 @@ export const Mutation = {
     _: any,
     { postId, post }: { postId: string; post: PostArgs["post"] },
     { prisma }: Context
-  ) => {
+  ): Promise<PostPayloadType> => {
     const { title, content } = post;
     // checks if fields have values
     if (!title && !content) {
       return {
-        userError: [
+        userErrors: [
           {
             message: "Need to have at least one field to update!",
           },
@@ -110,7 +110,37 @@ export const Mutation = {
     };
   },
   //================================================================================ Delete
-  postDelete: (_: any, __: any, { prisma }: Context) => {},
+  postDelete: async (
+    _: any,
+    { postId }: { postId: string },
+    { prisma }: Context
+  ): Promise<PostPayloadType> => {
+    const post = await prisma.post.findUnique({
+      where: {
+        id: Number(postId),
+      },
+    });
+    if (!post) {
+      return {
+        userErrors: [
+          {
+            message: "Post does not exist",
+          },
+        ],
+        post: null,
+      };
+    }
+    await prisma.post.delete({
+      where: {
+        id: Number(postId),
+      },
+    });
+
+    return {
+      userErrors: [],
+      post,
+    };
+  },
 };
 
 // using _ and __ means that
