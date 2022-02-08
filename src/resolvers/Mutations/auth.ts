@@ -6,7 +6,7 @@ import { JWT__SIGNATIRE } from "../Keys";
 // import { User, Prisma } from "@prisma/client";
 
 interface SignupArgs {
-  credentails: {
+  credentials: {
     password: string;
     email: string;
   };
@@ -24,11 +24,12 @@ interface UserPayload {
 export const authResolvers = {
   signup: async (
     _: any,
-    { credentails, bio, name }: SignupArgs,
+    { credentials, bio, name }: SignupArgs,
     { prisma }: Context
   ): Promise<UserPayload> => {
+    const { email, password } = credentials;
     //  validations
-    const isEmail = validator.isEmail(credentails.email);
+    const isEmail = validator.isEmail(email);
     if (!isEmail) {
       return {
         userErrors: [
@@ -40,7 +41,7 @@ export const authResolvers = {
       };
     }
 
-    const isValidPassword = validator.isLength(credentails.password, {
+    const isValidPassword = validator.isLength(password, {
       min: 5,
     });
     if (!isValidPassword) {
@@ -55,7 +56,6 @@ export const authResolvers = {
     }
 
     const isName = validator.isEmpty(name);
-    console.log(isName);
     if (isName) {
       return {
         userErrors: [
@@ -66,9 +66,9 @@ export const authResolvers = {
         token: null,
       };
     }
-    const hasedPassword = await bcrypt.hash(credentails.password, 10);
+    const hasedPassword = await bcrypt.hash(password, 10);
     const user = await prisma.user.create({
-      data: { email: credentails.email, password: hasedPassword, name },
+      data: { email, password: hasedPassword, name },
     });
     await prisma.profile.create({
       data: {
@@ -92,6 +92,55 @@ export const authResolvers = {
           message: "user created",
         },
       ],
+      token: token,
+    };
+  },
+
+  signin: async (
+    _: any,
+    { credentials }: SignupArgs,
+    { prisma }: Context
+  ): Promise<UserPayload> => {
+    const { email, password } = credentials;
+    const user = await prisma.user.findUnique({
+      where: {
+        email,
+      },
+    });
+
+    if (!user) {
+      return {
+        userErrors: [
+          {
+            message: "Invalid Credentials",
+          },
+        ],
+        token: null,
+      };
+    }
+    const isMathed = await bcrypt.compare(password, user.password);
+    if (!isMathed) {
+      return {
+        userErrors: [
+          {
+            message: "Invalid Credentials",
+          },
+        ],
+        token: null,
+      };
+    }
+    const token = await JWT.sign(
+      {
+        user: user.id,
+        email: user.email,
+      },
+      JWT__SIGNATIRE,
+      {
+        expiresIn: 3600,
+      }
+    );
+    return {
+      userErrors: [],
       token: token,
     };
   },
